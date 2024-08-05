@@ -1,0 +1,34 @@
+explanation about project:
+
+I want to create project to read universities site, collect data to db (some data in MySQL, some data in MongoDb and Redis) depends data type and efficiency.
+
+I want to read automatically one time per day (time should is variable and depends on project)
+each university site is different so I need different controllers to handle each site for extracting useful from HTML file and parse them.
+
+**************************************************
+
+for each site I have the data for professors (something like name, lastname, email, phone number, Work interests in scientific fields, etc) and it depends on each university, field and country. there is relations between universities and professors, faculties.
+
+so I think I need more complicated structure and more migrations.
+
+I think it is better to be separated the services for gathering data and the controllers for getting data from DB. because I think gathering data depends on many different HTML pages but restore data from data is similar.
+
+***************************************************
+I have a webSrapperService
+
+I think is better to change this file to general file. I want to change the url, patterns and filters for each university as variables and set for each university website based on situation.
+
+I think I can have one schedule to read web pages and write them as html file in the server. in the specific time my webSrapperService will use patterns (each pattern for each university that is saved in db) to parse data (if there is any changes in each file).
+
+do you agree?
+say me why?
+
+*****************************************************
+
+So, I don't need all of data in one step. firstly I want to create my DB. if you have any comment say me. MySql OR MongoDb or both of them and why?
+
+then think about universities and give me migrations. please consider the differences between universities and websites. universities, faculties, professors, interests, etc.
+
+some times there is data about phone number or room number and some times there is not. so I need a database to save all type of data, please don't give me a simple answer.
+
+plus that consider the relationships. 

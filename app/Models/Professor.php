@@ -10,12 +10,22 @@ class Professor extends Model
     use HasFactory;
 
     protected $fillable = [
-        'first_name', 'last_name', 'email', 'phone', 'room_number', 'faculty_id'
+        'first_name', 'last_name', 'affiliation', 'gender', 'email', 'phone', 'url',  'address', 'department_id'
     ];
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
 
     public function faculty()
     {
-        return $this->belongsTo(Faculty::class);
+        return $this->hasOneThrough(Faculty::class, Department::class);
+    }
+
+    public function university()
+    {
+        return $this->hasOneThrough(University::class, Department::class);
     }
 
     public function interests()

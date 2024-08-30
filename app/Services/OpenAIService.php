@@ -15,26 +15,30 @@ class OpenAIService
         $this->apiKey = config('services.openai.key');
     }
 
-    public function getResponseFromURL($model = 'gpt-3.5-turbo', $content, $max_tokens = 1500)
+    public function getResponseFromURL($content, $model = 'gpt-3.5-turbo', $max_tokens = 1500)
     {
+//        dump('content', $content);
+//        dump('model', $model);
+//        dump('max_tokens', $max_tokens);
         $response = $this->client->post('https://api.openai.com/v1/chat/completions', [
             'headers' => [
                 'Authorization' => 'Bearer ' . $this->apiKey,
                 'Content-Type' => 'application/json',
             ],
             'json' => [
+//                'model' => 'gpt-4o-2024-08-06',
                 'model' => $model,
                 'messages' => [
                     [
                         'role' => 'system',
-                        'content' => "Summarize the content at the following URL(give me the result as JSON file with keys like: name, last name, full name, email, phone, address, educations, ... if they are exist, and give me '' if not.): $url",
+                        'content' => $content,
                     ],
                 ],
                 'max_tokens' => $max_tokens,
             ],
         ]);
-
-        return json_decode($response->getBody(), true);
+        $res_json =  json_decode($response->getBody(), true);
+        return $res_json['choices'][0]['message']['content'];
     }
 }
 

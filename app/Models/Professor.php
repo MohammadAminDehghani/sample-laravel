@@ -10,7 +10,7 @@ class Professor extends Model
     use HasFactory;
 
     protected $fillable = [
-        'first_name', 'last_name', 'affiliation', 'gender', 'email', 'phone', 'url',  'address', 'department_id'
+        'first_name', 'last_name', 'affiliation', 'gender', 'email', 'phone', 'url', 'url_response',  'address', 'department_id'
     ];
 
     public function department()

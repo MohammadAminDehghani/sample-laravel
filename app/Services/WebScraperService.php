@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Department;
+use App\Models\Professor;
 use App\Models\ProfessorDetails;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Storage;
@@ -20,28 +21,20 @@ class WebScraperService
         $this->mongoClient = new MongoClient();
     }
 
-    public function scrapeDepartment(Department $department, string $url)
+    public function scrapeDepartment(Department $department)
     {
-        // Fetch HTML content
-        //$url = 'https://www.concordia.ca/ginacody/bcee.html';
-
         try {
             $response = $this->client->get($department->professors_url);
             if ($response->getStatusCode() == 200){
                 $department->update(['url_response' => 200]);
                 $htmlContent = $response->getBody()->getContents();
-                //$this->saveHtmlToFile($url, $htmlContent);
+                $this->saveHtmlToFile($department, $htmlContent);
             } else {
                 // Handle unexpected status codes here
                 throw new \Exception("Unexpected status code: " . $response->getStatusCode());
             }
         } catch (\GuzzleHttp\Exception\ClientException $e) {
             // Handle client errors (4xx responses)
-
-//                    $urlWithoutHtml = preg_replace('/\.html$/', '', $department->url);
-//                    $newUrl = $urlWithoutHtml . '/faculty-staff.html';
-//                    $department->update(['professors_url' => $newUrl]);
-
             dump("Client error: " . $e->getMessage());
             $department->update(['url_response' => $e->getCode()]);
         } catch (\GuzzleHttp\Exception\RequestException $e) {
@@ -52,19 +45,50 @@ class WebScraperService
             echo "General error: " . $e->getMessage();
         }
 
-        // Parse HTML content
-        //$data = $this->parseHtmlContent($htmlContent, $patterns);
-
-        // Store data in MySQL and MongoDB
-        //$this->storeData($data);
     }
 
-    protected function saveHtmlToFile(string $url, string $htmlContent)
+    public function scrapeProfessor(Professor $professor)
     {
-        $filename = 'html/' . md5($url) . '.html';
+        try {
+            $response = $this->client->get($professor->url);
+            if ($response->getStatusCode() == 200){
+                $professor->update(['url_response' => 200]);
+                $htmlContent = $response->getBody()->getContents();
+                $this->saveHtmlToFile($professor, $htmlContent);
+            } else {
+                // Handle unexpected status codes here
+                throw new \Exception("Unexpected status code: " . $response->getStatusCode());
+            }
+        } catch (\GuzzleHttp\Exception\ClientException $e) {
+            // Handle client errors (4xx responses)
+            dump("Client error: " . $e->getMessage());
+            $professor->update(['url_response' => $e->getCode()]);
+        } catch (\GuzzleHttp\Exception\RequestException $e) {
+            // Handle other request errors
+            echo "Request error: " . $e->getMessage();
+        } catch (\Exception $e) {
+            // Handle any other errors
+            echo "General error: " . $e->getMessage();
+        }
+
+    }
+
+//    protected function saveHtmlToFile(string $url, string $htmlContent)
+//    {
+//        $filename = 'html/' . md5($url) . '.html';
+//        Storage::disk('local')->put($filename, $htmlContent);
+//    }
+
+    protected function saveHtmlToFile($object, string $htmlContent)
+    {
+        //$filename = 'html/' . md5($url) . '.html';
+        $modelName = class_basename(get_class($object));
+        $modelNameLower = strtolower($modelName); // This will give 'user'
+        $filename = 'html/' . $modelNameLower . '/' . $object->id . '.html';
         Storage::disk('local')->put($filename, $htmlContent);
     }
 
+    // Not Used!
     protected function parseHtmlContent(string $htmlContent, array $patterns)
     {
         $crawler = new Crawler($htmlContent);
@@ -75,10 +99,10 @@ class WebScraperService
                 return $node->text();
             });
         }
-
         return $data;
     }
 
+    // Not Used!
     protected function storeData(array $data)
     {
         // Store data in MySQL
@@ -89,7 +113,7 @@ class WebScraperService
         $collection->insertOne($data);
     }
 
-    public function cleanHtmlForAI(string $url)
+    public function cleanHtmlForAI(string $url): array|string|null
     {
         // Initialize the Crawler
         $crawler = new Crawler();
@@ -101,7 +125,6 @@ class WebScraperService
         $crawler->addHtmlContent($htmlContent);
 
         // Remove all classes and IDs from the HTML elements
-
         $crawler->filter('*')->each(function (Crawler $node) {
             $domNode = $node->getNode(0);
 
@@ -135,37 +158,78 @@ class WebScraperService
             }
         });
 
-//        $crawler->filter('*')->each(function (Crawler $node) {
-//            $domNode = $node->getNode(0);
-//
-//            // If the node exists and does not have an href attribute
-//            if ($domNode && !$domNode->hasAttribute('href')) {
-//                // Create a document fragment to hold the node's children
-//                $fragment = $domNode->ownerDocument->createDocumentFragment();
-//
-//                // Loop through child nodes and append them to the fragment
-//                while ($domNode->firstChild) {
-//                    $fragment->appendChild($domNode->firstChild);
-//                }
-//
-//                // Replace the original node with the fragment (preserves children with hrefs)
-//                $domNode->parentNode->replaceChild($fragment, $domNode);
-//            }
-//        });
+        // Get the cleaned HTML content
+        $cleanedHtml = $crawler->html();
+
+        // Remove extra whitespace
+        return preg_replace('/\s+/', ' ', $cleanedHtml);
+    }
+
+    public function cleanHtmlProfessorPageForAI(string $url): array|string|null
+    {
+        // Initialize the Crawler
+        $crawler = new Crawler();
+
+        // Fetch the HTML content
+        $htmlContent = file_get_contents($url);
+
+        // Add the HTML content to the Crawler
+        $crawler->addHtmlContent($htmlContent);
+
+
+        $crawler->filter('*')->each(function (Crawler $node) {
+            $domNode = $node->getNode(0);
+
+            if ($domNode) {
+                // Remove <head>, <script>, <header>, and <footer> tags
+                if (in_array($domNode->nodeName, ['head', 'script', 'header', 'footer'])) {
+                    if ($domNode->parentNode) {
+                        $domNode->parentNode->removeChild($domNode);
+                    }
+                    return; // Skip further processing for these nodes
+                }
+
+                // Remove all attributes except 'href' and 'src'
+                $attributes = iterator_to_array($domNode->attributes);
+                foreach ($attributes as $attr) {
+                    // Retain 'href' for <a> tags and 'src' for <img> tags
+                    if (!($domNode->nodeName === 'a' && $attr->nodeName === 'href') &&
+                        !($domNode->nodeName === 'img' && $attr->nodeName === 'src')) {
+                        $domNode->removeAttribute($attr->nodeName);
+                    }
+                }
+
+                // If the node is empty (no text or children) and it's not an <img> or <link> tag, remove it
+                if (!$domNode->hasChildNodes() && trim($domNode->textContent) === '' && !in_array($domNode->nodeName, ['img', 'link'])) {
+                    if ($domNode->parentNode) {
+                        $domNode->parentNode->removeChild($domNode);
+                    }
+                }
+            }
+        });
+
+
 
         // Get the cleaned HTML content
         $cleanedHtml = $crawler->html();
-       // return $cleanedHtml;
-        // Convert HTML to plain text
-        //$plainText = strip_tags($cleanedHtml);
 
         // Remove extra whitespace
-        $plainText = preg_replace('/\s+/', ' ', $cleanedHtml);
+        return $this->convertToFragments(preg_replace('/\s+/', ' ', $cleanedHtml));
+    }
 
-        // Send the cleaned HTML to the AI for processing
-        // This can be done via an API call or any other method you prefer
-        // Here, we'll just return the cleaned HTML as an example
-        return $plainText;
+    function convertToFragments($html) {
+        // Define the tags to be converted to fragments
+        $tagsToConvert = ['div', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+
+        // Loop through each tag and perform the replacement
+        foreach ($tagsToConvert as $tag) {
+            // Replace opening tags <tag> with <>
+            $html = preg_replace("/<$tag\b[^>]*>/i", "<><>", $html);
+            // Replace closing tags </tag> with </>
+            $html = preg_replace("/<\/$tag>/i", "</>", $html);
+        }
+
+        return $html;
     }
 
 }

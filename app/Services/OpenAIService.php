@@ -15,18 +15,17 @@ class OpenAIService
         $this->apiKey = config('services.openai.key');
     }
 
-    public function getResponseFromURL($content, $model = 'gpt-3.5-turbo', $max_tokens = 1500)
+    public function API_to_AI($content, $model = 'gpt-3.5-turbo', $max_tokens = 4000)
     {
-//        dump('content', $content);
-//        dump('model', $model);
-//        dump('max_tokens', $max_tokens);
+        // if you want to pay more!
+        //$model = 'gpt-4o-2024-08-06';
+
         $response = $this->client->post('https://api.openai.com/v1/chat/completions', [
             'headers' => [
                 'Authorization' => 'Bearer ' . $this->apiKey,
                 'Content-Type' => 'application/json',
             ],
             'json' => [
-//                'model' => 'gpt-4o-2024-08-06',
                 'model' => $model,
                 'messages' => [
                     [
@@ -38,6 +37,7 @@ class OpenAIService
             ],
         ]);
         $res_json =  json_decode($response->getBody(), true);
+        //return $res_json;
         return $res_json['choices'][0]['message']['content'];
     }
 }

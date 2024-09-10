@@ -125,6 +125,16 @@
                     <div class="ml-4 text-center text-sm text-gray-500 sm:text-right sm:ml-0">
                         Laravel v{{ Illuminate\Foundation\Application::VERSION }} (PHP v{{ PHP_VERSION }})
                     </div>
+
+
+                    <div>
+                        @foreach($professors as $prof)
+                            <div>{{$prof->first_name}}</div>
+                            <div>
+                                <img src="{{\App\Models\ProfessorDetails::where('professor_id', $prof->id)->first()?->image_url}}" alt="">
+                            </div>
+                        @endforeach
+                    </div>
                 </div>
             </div>
         </div>

@@ -20,6 +20,10 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::get('/data', [ApiController::class, 'getData']);
+
 Route::post('/data', [ApiController::class, 'postData']);
 
-
+Route::get('/admin/professors', [ApiController::class, 'professorsGet']);
+Route::get('/admin/professors/{id}/show', [ApiController::class, 'professorGet']);
+Route::post('/admin/tags', [ApiController::class, 'tagsPost']);
+Route::post('/admin/professors/filter', [ApiController::class, 'professorsFilter']);

@@ -189,6 +189,7 @@ class WebScraperService
                     return; // Skip further processing for these nodes
                 }
 
+
                 // Remove all attributes except 'href' and 'src'
                 $attributes = iterator_to_array($domNode->attributes);
                 foreach ($attributes as $attr) {
@@ -214,7 +215,8 @@ class WebScraperService
         $cleanedHtml = $crawler->html();
 
         // Remove extra whitespace
-        return $this->convertToFragments(preg_replace('/\s+/', ' ', $cleanedHtml));
+        $clean_html_without_whitespace = $this->convertToFragments(preg_replace('/\s+/', ' ', $cleanedHtml));
+        return $this->remove_all_OOXML_tags($clean_html_without_whitespace);
     }
 
     function convertToFragments($html) {
@@ -232,5 +234,25 @@ class WebScraperService
         return $html;
     }
 
+
+    function remove_all_OOXML_tags($html){
+        // Use a regex pattern to remove all OOXML tags and their content
+        $html = preg_replace('/<\s*(o|w|v|m|x|w10|st1|wne):[^>]*>.*?<\s*\/\1:[^>]*>/si', '', $html);
+
+        // Remove any self-closing OOXML tags (e.g., <o:AllowPNG/>)
+        $html = preg_replace('/<\s*(o|w|v|m|x|w10|st1|wne):[^>]*\/>/si', '', $html);
+
+        // Optionally, clean up any remaining conditional comments or MSO-specific content
+        $html = preg_replace('/<!--\[if gte mso.*?\]>(.*?)<!\[endif\]-->/si', '', $html);
+
+        // Replace non-breaking spaces with regular spaces
+        $html = str_replace("\u{A0}", ' ', $html);
+
+        // Remove style tags (CSS)
+        $html = preg_replace('/<style\b[^>]*>(.*?)<\/style>/is', '', $html);
+
+
+        return $html;
+    }
 }
 

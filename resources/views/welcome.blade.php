@@ -132,6 +132,7 @@
                             <div>{{$prof->first_name}}</div>
                             <div>
                                 <img src="{{\App\Models\ProfessorDetails::where('professor_id', $prof->id)->first()?->image_url}}" alt="">
+                                <div>{{\App\Models\ProfessorDetails::where('professor_id', $prof->id)->first()?->summary}}</div>
                             </div>
                         @endforeach
                     </div>

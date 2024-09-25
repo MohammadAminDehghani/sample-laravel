@@ -18,7 +18,7 @@ class OpenAIService
     public function API_to_AI($content, $model = 'gpt-3.5-turbo', $max_tokens = 4000)
     {
         // if you want to pay more!
-        //$model = 'gpt-4o-2024-08-06';
+        $model = 'gpt-4o-2024-08-06';
 
         $response = $this->client->post('https://api.openai.com/v1/chat/completions', [
             'headers' => [

@@ -39,4 +39,5 @@ Route::get('/read', [WebScraperController::class, 'readUrl']);
 
 Route::get('/command1', [WebScraperController::class, 'read_and_write_all_departments_with_university_url']);
 Route::get('/test', [WebScraperController::class, 'test']);
+Route::get('/test2', [WebScraperController::class, 'test2']);
 

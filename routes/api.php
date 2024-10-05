@@ -24,10 +24,17 @@ Route::get('/data', [ApiController::class, 'getData']);
 
 Route::post('/data', [ApiController::class, 'postData']);
 
-Route::get('/admin/professors', [ApiController::class, 'professorsGet']);
-Route::get('/admin/professors/{id}/show', [ApiController::class, 'professorGet']);
+
 Route::post('/admin/tags', [ApiController::class, 'tagsPost']);
-Route::post('/admin/professors/filter', [ApiController::class, 'professorsFilter']);
+
+
+Route::middleware(['auth.api', 'limit.requests'])->group(function() {
+    //return response()->json(['error' => 54], 403);
+    Route::get('/admin/professors', [ApiController::class, 'professorsGet']);
+    Route::get('/admin/professors/{id}/show', [ApiController::class, 'professorGet']);
+    Route::post('/admin/professors/filter', [ApiController::class, 'professorsFilter']);
+});
+
 
 
 
@@ -47,6 +54,7 @@ Route::group([
 
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class, 'login']);
+    Route::post('verify-token', [AuthController::class, 'verify_token']);
     Route::post('logout', [AuthController::class, 'logout']);
 
 
